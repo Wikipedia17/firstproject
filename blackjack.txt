@@ -1,0 +1,235 @@
+Script started on Mon Jul 23 15:42:44 2018
+% cat -n blackjack.c
+     1	/*
+     2	 * File:    blackjack.c
+     3	 * Project: Black Jack Game
+     4	 * Author:  Anna Stoneman
+     5	 * Version: 3.0 July 23, 2018 added comments and documentation
+     6	 *
+     7	 * Copyright (c) 2018, Anna Stoneman all rights reserved
+     8	 * Distribution without permission of the author is prohibited
+     9	 */
+    10	
+    11	/* includes */
+    12	#include <stdio.h>
+    13	#include <stdlib.h>
+    14	#include "userAccount.h"
+    15	#include <string.h>
+    16	
+    17	
+    18	#define MAX_STRING_LEN 256
+    19	
+    20	/* function prototypes */
+    21	int randomBetween(int lower, double upper);
+    22	int getCard(void);
+    23	int playGame(void);
+    24	int aceValue(void);
+    25	int initialCards(void);
+    26	int dealerScore(void);
+    27	int whoWon(void);
+    28	
+    29	/* determines user and bet, calls playGame function, and adds/removes money from bank
+    30	 * depending whether user won
+    31	 */
+    32	int main(void)
+    33	{
+    34	    /* initializes variables */
+    35	    int winner = 0;
+    36	    int money = 0;
+    37	    int userInput = 0;
+    38	    int gamble = -1;
+    39	    int wrongValue = 0;
+    40	    char userName[MAX_STRING_LEN];
+    41	    /* determines if user wants to play */
+    42	    printf("\e[36mComputer: Play Blackjack? (1/0)\e[33m");
+    43	    scanf("%d", &userInput);
+    44	    /* if user does want to play continues game */
+    45	    if (userInput == 1) {
+    46	        printf("\e[32mDealer: Welcome to Black Jack!\n");
+    47	        /* determines user */
+    48	        printf("Dealer: What is your name?\e[33m ");
+    49	        scanf("%s", userName);
+    50	        printf("\e[32mDealer: Hello, \e[33m%s\e[32m!\e[0m\n", userName);
+    51	        /* tells user how much is in account */
+    52	        printf("\e[36mComputer: Your current balance is \e[33m$%d\e[36m.\n", bankAccount(userName));
+    53	        /* keeps playing until user quits */
+    54	        while(userInput == 1) {
+    55	            money = bankAccount(userName);
+    56	            /* user has to bet more than 0 and equal or less than their bank account */
+    57	            for(wrongValue = 0; (gamble > money) || (gamble < 0); wrongValue++) {
+    58	                printf("\e[32mDealer: How much do you want to bet?\e[33m");
+    59	                scanf("%d", &gamble);
+    60	                if (wrongValue > 0)
+    61	                    printf("\e[32mDealer: You can't do that, stupid.\n");
+    62	            }
+    63	            /* determines who won */
+    64	            winner = whoWon();
+    65	            /* if user won, adds their gamble to bank */
+    66	            if (winner == 1) {
+    67	                printf("\e[32mDealer: Congrats, you won!\n");
+    68	                money += gamble;
+    69	                printf("\e[36mComputer: Your current balance is \e[33m$%d\e[36m.\n", addMoney(userName, gamble, 1));
+    70	            /* if user ties, than does not touch bank */
+    71	            } else if (winner == 2) {
+    72	                printf("\e[32mDealer: It's a push (tie)!\n");
+    73	            /* if user lose, removes gamble from bank */
+    74	            } else {
+    75	                printf("\e[32mDealer: Haha I won!\n");
+    76	                printf("\e[36mComputer: Your current balance is \e[33m$%d\e[36m.\n", addMoney(userName, gamble, 0));
+    77	            } 
+    78	            /* checks if user still wants to play */
+    79	            printf("\e[36mComputer: Play Blackjack? (1/0)\e[33m");
+    80	            scanf("%d", &userInput);
+    81	            /* resets gamble variable so user has to enter a new one next round */
+    82	            gamble = -1;
+    83	        }
+    84	        /* checks balance of user */
+    85	        bankAccount(userName);
+    86	    }
+    87	    /* changes font color back to white */
+    88	    printf("\e[0m");
+    89	    return 0;
+    90	}
+    91	
+    92	/* returns a random number given range */
+    93	int randomBetween(int lower, double upper)
+    94	{
+    95	    /* inits vars */
+    96	    int randomInt = 0;
+    97	    time_t t;
+    98	    /* seeds rng using time */
+    99	    srand((unsigned) time(&t));
+   100	    /* converts upper var from int to double */
+   101	    double rangeAsDouble = upper;
+   102	    /* determines random int */
+   103	    randomInt = rand() * rangeAsDouble / RAND_MAX + 1;
+   104	    return randomInt;
+   105	}
+   106	
+   107	/* if user draws an ace - calls this function to determine if 1 or 11 */
+   108	int aceValue(void)
+   109	{
+   110	    /* inits ace var */
+   111	    int ace = 0;
+   112	    /* determines if user wants 1 or 11 */
+   113	    printf("\e[35mYou drew an \e[37mace\e[35m! Do you want it to be 11 or 1?\e[33m");
+   114	    scanf("%d", &ace);
+   115	    /* sets ace var to what user wants */
+   116	    if (ace == 1) {
+   117	        ace = 1;
+   118	    } else {
+   119	        ace = 11;
+   120	    }   
+   121	    return ace;
+   122	}
+   123	
+   124	/* gets the value of the card drawn */
+   125	int getCard(void)
+   126	{
+   127	    /* inits card var */
+   128	    int card = 0;
+   129	    /* determines value of card. Since house does not matter, only uses 13 values.
+   130	     * 11, 12, and 13 are all face cards and given the value 10. Ace is 1.
+   131	     */
+   132	    card = randomBetween(1, 13);
+   133	    /* if card value is greater or equal to 11, assigns 10 to value */
+   134	    if (card >= 11) { 
+   135	        card = 10;
+   136	        printf("\e[35mYou drew a \e[37mface card\e[35m!\n");
+   137	    /* if card value is 1, calls ace function to see if 1 or 11 */
+   138	    } else if (card == 1) {
+   139	        card = aceValue();
+   140	    }
+   141	    /* if card value is 8, tells user card's value using correct grammar */
+   142	    if (card == 8) {
+   143	        printf("\e[35mYou drew an \e[37m%d\e[35m.\n", card);
+   144	    /* if nothing special, tells user the card's value */
+   145	    } else { 
+   146	        printf("\e[35mYou drew a \e[37m%d\e[35m.\n", card);
+   147	    }
+   148	    /* returns card's value */
+   149	    return card;
+   150	}
+   151	
+   152	/* determines what the dealer's score is */
+   153	int dealerScore(void)
+   154	{
+   155	    /* inits vars */
+   156	    int score = 0;
+   157	    int card = 0;
+   158	    /* keeps drawing cards while score is under 17 */
+   159	    while (score < 17) {
+   160	        card = randomBetween(1,13);
+   161	        if (card >= 11)
+   162	            card = 10;
+   163	        /* determines what value ace should be */
+   164	        else if (card == 1) {
+   165	            if (score <= 10)
+   166	                card = 11;
+   167	            else
+   168	                card = 1;
+   169	        }
+   170	        /* prints what dealer drew so user can see (one at a time) */
+   171	        printf("dealer card: %d\n", card);
+   172	        score += card;
+   173	        sleep(1);
+   174	    }
+   175	    /* returns dealer's score */
+   176	    return score;
+   177	}
+   178	
+   179	/* structure behind a single game */
+   180	int playGame(void)
+   181	{
+   182	    /* inits vars */
+   183	    int score = 0;
+   184	    int userInput = 0;
+   185	    /* gives user first two cards one at a time and adds to score */
+   186	    printf("\e[32mDealer: Here are your first two cards:\n");
+   187	    score += getCard();
+   188	    sleep(1);
+   189	    score += getCard();
+   190	    printf("\e[35mYour score is now \e[37m%d\e[35m.\n", score);
+   191	    /* asks if user wants another card */
+   192	    printf("\e[32mDealer: Another card? (1/0)\e[33m");
+   193	    scanf("%d", &userInput);
+   194	    /* if user does want another card, keeps asking until they don't or score goes over 21 */
+   195	    while ((userInput != 0) && (score < 21)) {
+   196	        score += getCard(); 
+   197	        printf("\e[35mYour score is now \e[37m%d\e[35m.\n", score);
+   198	        if (score < 21) {
+   199	            printf("\e[32mDealer: Another card? (1/0)\e[33m");
+   200	            
+   201	            scanf("%d", &userInput);
+   202	        }
+   203	    }
+   204	    /* prints final score and returns value */
+   205	    printf("\e[35mYour final score is \e[37m%d\e[35m.\e[0m\n", score);
+   206	    return score;
+   207	}
+   208	
+   209	/* determines who won */
+   210	int whoWon(void)
+   211	{
+   212	    /* inits vars */
+   213	    int userScore = 0;
+   214	    int dScore = 0;
+   215	    /* gets user score from playGame function and dealer score from dealerScore function */
+   216	    userScore = playGame();
+   217	    dScore = dealerScore();
+   218	    /* prints the scores */
+   219	    printf("Your score: %d\n", userScore);
+   220	    printf("Dealer's score: %d\n", dScore);
+   221	    /* whoever's score is closer to 21 and below wins */
+   222	    if (((userScore > dScore) && (userScore <= 21)) || ((dScore > 21) && (userScore <= 21))) {
+   223	        return 1;
+   224	    } else if ((userScore == dScore) || ((userScore > 21) && (dScore > 21))) {
+   225	        return 2;
+   226	    } else {
+   227	        return 3;
+   228	    }
+   229	}
+% exit
+exit
+
+Script done on Mon Jul 23 15:42:55 2018

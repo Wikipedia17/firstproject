@@ -1,0 +1,125 @@
+Script started on Mon Jul 23 15:43:59 2018
+% cat -n userAccount.h
+     1	/*
+     2	 * File:    userAccount.h
+     3	 * Project: Black Jack Game
+     4	 * Author:  Anna Stoneman
+     5	 * Version: 2.0 July 2018, added documentation
+     6	 *
+     7	 * Copyright (c) 2018 Anna Stoneman all rights reserved
+     8	 * Distribution without written permission of the author is prohibited
+     9	 */
+    10	
+    11	/* inclues */
+    12	#include <stdio.h>
+    13	
+    14	/* function prototypes */
+    15	int getSize(int balance);
+    16	
+    17	/* checks if a username exists checks their bank account
+    18	 * if a username does not exist, creates a new one and inits bank
+    19	 */
+    20	int bankAccount(char* userName)
+    21	{
+    22	    /* inits vars */
+    23	    int money = 500;
+    24	    int i = 0;
+    25	    char checkName[128];
+    26	    int newUser = 0;
+    27	    /* opens userAccount.txt for reading */
+    28	    FILE *fp = fopen("userAccount.txt", "r");
+    29	    /* puts searcher at beginning of file */
+    30	    rewind(fp);
+    31	    /* while searcher has not reached end of file */
+    32	    while(!feof(fp)) {
+    33	        /* checks if username is there */
+    34	        fscanf(fp, "%s", checkName);
+    35	        /* if username is found, moves searcher to balance */
+    36	        if(strcmp(userName, checkName) == 0) {
+    37	            fscanf(fp, "%*[^0-9]");
+    38	            fscanf(fp, "%d", &money);
+    39	            break;
+    40	        }
+    41	    }
+    42	    /* if searcher has reached end of file, creates new username */
+    43	    if(feof(fp)){
+    44	        /* closes userAccount.txt */
+    45	        fclose(fp);
+    46	        printf("new user!\n");
+    47	        /* opens userAccount.txt for appending */
+    48	        FILE *fp = fopen("userAccount.txt", "a");
+    49	        /* prints new username and init balance to userAccount.txt*/
+    50	        fprintf(fp, "%s  ", userName);
+    51	        fprintf(fp, "500\n");
+    52	        newUser = 1;
+    53	    }
+    54	    /* closes userAccount.txt */
+    55	    fclose(fp);
+    56	    return money;
+    57	}
+    58	
+    59	/* adds/takes money from user's balance */
+    60	int addMoney(char* userName, int addAmount, int sign)
+    61	{
+    62	    /* inits vars */
+    63	    int newAmount = 0;
+    64	    int currentAmount = 0;
+    65	    int location = 0;
+    66	    char checkName[128];
+    67	    int fLocation;
+    68	    /* opens userAccount.txt for reading */
+    69	    FILE *fp = fopen("userAccount.txt", "r");
+    70	    currentAmount = bankAccount(userName);
+    71	    /* if adding, add money to account */
+    72	    if (sign == 1) 
+    73	        newAmount = currentAmount+=addAmount;
+    74	    /* if subtracting, take money from account */
+    75	    else
+    76	        newAmount = currentAmount-=addAmount;
+    77	    /* find location of user's balance */
+    78	    while(!feof(fp)) {
+    79	        fscanf(fp, "%s", checkName);
+    80	        if(strcmp(userName, checkName) == 0) {
+    81	            fscanf(fp, "%*[^0-9]");
+    82	            fscanf(fp, "%*d");
+    83	            fLocation = ftell(fp);
+    84	            break;
+    85	        }
+    86	    }
+    87	    /* closes userAccount.txt */
+    88	    fclose(fp);
+    89	    /* opens userAccount.txt for reading and adding(?) */
+    90	    FILE *fd = fopen("userAccount.txt", "r+b");
+    91	    /* moves searcher to start of number */
+    92	    fLocation -= getDigits(currentAmount);
+    93	    fseek(fd, fLocation, SEEK_SET);
+    94	    /* if new digits are more than previous, moves cursor over */
+    95	    if (getDigits(newAmount) > getDigits(currentAmount))
+    96	        fprintf(fd, " ");
+    97	    /* prints new amount over old amount */
+    98	    fprintf(fd, "%d", newAmount);
+    99	    /* closes userAccount.txt */
+   100	    fclose(fd);
+   101	    /* returns new user balance */
+   102	    return newAmount;
+   103	}
+   104	
+   105	/* finds the amount of digits in a number */
+   106	int getDigits(int balance)
+   107	{
+   108	    /* inits vars */
+   109	    int decimals = 1;
+   110	    int i = 0;
+   111	    /* keeps dividing number by 10 while greater than 1 */
+   112	    while ((balance/decimals) >=1) {
+   113	         decimals *= 10;
+   114	         /* increments each division to find number of decimals */
+   115	         i++;
+   116	    }
+   117	    /* returns number of decimals */
+   118	    return i;
+   119	}
+% exit
+exit
+
+Script done on Mon Jul 23 15:44:10 2018
